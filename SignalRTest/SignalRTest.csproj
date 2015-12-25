@@ -121,7 +121,9 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="MineHub.cs" />
+    <Content Include="App_Code\Utils.cs" />
+    <Content Include="App_Code\MineQueueObserver.cs" />
+    <Content Include="App_Code\MineHub.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Startup.cs" />
   </ItemGroup>
