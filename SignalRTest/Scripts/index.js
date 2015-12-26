@@ -1,4 +1,6 @@
-﻿var mine = Vue.component('mine', {
+﻿var global_m;
+
+var mine = Vue.component('mine', {
     template: '<canvas></canvas>',
     data: function () {
         return {
@@ -31,7 +33,6 @@
         });
 
         console.log(self, mine_hub);
-        // todo: init visiable mine data
     },
 });
 
