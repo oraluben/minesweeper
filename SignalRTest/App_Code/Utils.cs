@@ -1,4 +1,5 @@
 ﻿using Apache.NMS;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,69 +18,25 @@ namespace SignalRTest.App_Code
         static readonly String brokerUri = "stomp:tcp://" + host + ":" + port + "?transport.useLogging=true";
         static readonly NMSConnectionFactory connectionFactory = new NMSConnectionFactory(brokerUri);
 
-        public static Consumer getConsumer()
+        public static ActiveMQConsumer getConsumer()
         {
-            return new Consumer(connectionFactory, user, pass, dest);
+            return new ActiveMQConsumer(connectionFactory, user, pass, dest);
         }
 
-        public static Producer getProducer()
+        public static ActiveMQProducer getProducer()
         {
-            return new Producer(connectionFactory, user, pass, dest);
-        }
-    }
-
-    public class Producer
-    {
-        IConnection connection;
-        ISession session;
-        IDestination destination;
-        IMessageProducer producer;
-
-        public Producer(NMSConnectionFactory connectionFactory, String user, String pass, String dest)
-        {
-            connection = connectionFactory.CreateConnection(user, pass);
-            connection.Start();
-
-            session = connection.CreateSession(AcknowledgementMode.AutoAcknowledge);
-            destination = session.GetQueue(dest);
-
-            producer = session.CreateProducer(destination);
-        }
-
-        public void Send(String body, IDictionary<String, String> headers)
-        {
-            ITextMessage message = session.CreateTextMessage(body);
-
-            foreach (KeyValuePair<string, string> header in headers)
-            {
-                message.Properties[header.Key] = header.Value;
-            }
-
-            producer.Send(message);
+            return new ActiveMQProducer(connectionFactory, user, pass, dest);
         }
     }
 
-    public class Consumer
+    [JsonObject(MemberSerialization.OptIn)]
+    public class ClientMessage
     {
-        IConnection connection;
-        ISession session;
-        IDestination destination;
-        IMessageConsumer consumer;
-
-        public Consumer(NMSConnectionFactory connectionFactory, String user, String pass, String dest)
-        {
-            connection = connectionFactory.CreateConnection(user, pass);
-            connection.Start();
-
-            session = connection.CreateSession(AcknowledgementMode.AutoAcknowledge);
-            destination = session.GetQueue(dest);
-
-            consumer = session.CreateConsumer(destination);
-        }
-
-        public IMessage getMessage()
-        {
-            return consumer.Receive();
-        }
+        [JsonProperty]
+        public string action { get; set; }
+        [JsonProperty]
+        public string param { get; set; }
+        [JsonProperty]
+        public string connection_id { get; set; }
     }
 }

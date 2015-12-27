@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Web;
 using Microsoft.AspNet.SignalR;
 using System.Diagnostics;
+using Newtonsoft.Json;
 
 namespace SignalRTest.App_Code
 {
@@ -22,20 +23,28 @@ namespace SignalRTest.App_Code
         /// <summary>
         /// each Hub has one producer for ActiveMQ
         /// </summary>
-        private Producer p = Utils.getProducer();
-        private String ConnectionID;
+        private ActiveMQProducer p = Utils.getProducer();
+        private String ConnectionID
+        {
+            get { return Context.ConnectionId; }
+        }
 
         public void SendToServer(string s_json)
         {
-            Debug.WriteLine("Hub receive message: {0}", s_json);
-            // todo: send info and clientID to AMQ
-            // could be: init / click
-        }
+            Debug.Assert(ConnectionID != "", ConnectionID);
+            Debug.WriteLine("Hub receive message: {0}", (object)s_json);
 
-        public override Task OnConnected()
-        {
-            ConnectionID = Context.ConnectionId;
-            return base.OnConnected();
+            ClientMessage clientMessage = JsonConvert.DeserializeObject<ClientMessage>(s_json);
+            clientMessage.connection_id = ConnectionID;
+
+            string body = JsonConvert.SerializeObject(clientMessage);
+
+            Dictionary<string, string> headers = new Dictionary<string, string>
+            {
+                {"ConnectionID", ConnectionID },
+            };
+
+            p.Send(body, headers);
         }
     }
 }

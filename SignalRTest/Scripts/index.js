@@ -21,6 +21,12 @@ var mine = Vue.component('mine', {
                 hub.server.sendToServer(s_json);
             };
         },
+        test: function () {
+            this.send_to_server(JSON.stringify({
+                "action": "init",
+                "param": "233"
+            }));
+        }
     },
     compiled: function () {
         var self = this;
@@ -32,7 +38,7 @@ var mine = Vue.component('mine', {
             self.send_to_server = self.send_to_server_factory(mine_hub);
         });
 
-        console.log(self, mine_hub);
+        console.log(self);
     },
 });
 

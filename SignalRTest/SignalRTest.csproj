@@ -178,6 +178,7 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>MineModel.edmx</DependentUpon>
     </Content>
+    <Content Include="App_Code\ActiveMQUtils.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Startup.cs" />
   </ItemGroup>
