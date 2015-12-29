@@ -151,7 +151,7 @@
     <Content Include="Scripts\jquery-2.1.4.min.js" />
     <Content Include="Scripts\jquery.signalR-2.2.0.js" />
     <Content Include="Scripts\jquery.signalR-2.2.0.min.js" />
-    <Content Include="Scripts\vue-1.0.12.js" />
+    <Content Include="Scripts\vue-1.0.13.js" />
     <Content Include="Web.config">
       <SubType>Designer</SubType>
     </Content>
