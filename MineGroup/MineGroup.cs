@@ -7,7 +7,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace SignalRTest.App_Code
+namespace MineGroup
 {
     using System;
     using System.Collections.Generic;

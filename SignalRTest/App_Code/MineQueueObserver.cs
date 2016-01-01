@@ -1,5 +1,6 @@
 ﻿using Apache.NMS;
 using Microsoft.AspNet.SignalR;
+using MineGroup;
 using Newtonsoft.Json;
 using System;
 using System.Collections;
@@ -36,26 +37,37 @@ namespace SignalRTest.App_Code
                     Debug.WriteLine("MineQueueObserver get a message, body: {0}", (object)textM.Text);
                     HandleOne(textM);
                 }
-                catch (Exception) { Debug.WriteLine("meet an unhandled exception"); }
+                catch (Exception e) { Debug.WriteLine("meet an unhandled exception: {0}", e); }
             }
         }
 
-        public void HandleOne(ITextMessage m)
+        public void HandleOne(ITextMessage message)
         {
-            string body_json = m.Text;
+            string body_json = message.Text;
 
             ClientMessage body_o = JsonConvert.DeserializeObject<ClientMessage>(body_json);
 
-            Debug.Assert(body_o.connection_id == m.Properties["ConnectionID"].ToString(),
-                "connection id in body and header do not match: {0} and {1}", body_o.connection_id, m.Properties["ConnectionID"].ToString());
+            Debug.Assert(body_o.connection_id == message.Properties["ConnectionID"].ToString(),
+                "connection id in body and header do not match: {0} and {1}", body_o.connection_id, message.Properties["ConnectionID"].ToString());
 
             string res = "";
             switch (body_o.action)
             {
                 case "init":
-                    ArrayList s = JsonConvert.DeserializeObject<ArrayList>(body_o.param);
+                    //ArrayList s = JsonConvert.DeserializeObject<ArrayList>(body_o.param);
 
-                    res = JsonConvert.SerializeObject(s);
+                    int group_x = 0, group_y = 0;
+                    InitDataStruct d = new InitDataStruct();
+                    d.group_x = group_x;
+                    d.group_y = group_y;
+
+                    using (MineGroupUtils m = new MineGroupUtils())
+                    {
+                        byte[] data = m.getBin(group_x, group_y);
+                    }
+
+                    res = JsonConvert.SerializeObject(d);
+                    Debug.WriteLine(res);
 
                     _hub_context.Clients.Client(body_o.connection_id).sendToClient(res);
                     break;
@@ -66,5 +78,18 @@ namespace SignalRTest.App_Code
                     break;
             }
         }
+    }
+
+    [JsonObject(MemberSerialization.OptIn)]
+    public class InitDataStruct
+    {
+        [JsonProperty]
+        const string type = "init";
+        [JsonProperty]
+        public int group_x { get; set; }
+        [JsonProperty]
+        public int group_y { get; set; }
+        [JsonProperty]
+        public string data { get; set; }
     }
 }

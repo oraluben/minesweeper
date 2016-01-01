@@ -1,5 +1,4 @@
-﻿USE Mine;
-IF OBJECT_ID('dbo.MineGroup', 'U') IS NOT NULL
+﻿IF OBJECT_ID('dbo.MineGroup', 'U') IS NOT NULL
   DROP TABLE dbo.MineGroup; 
 CREATE TABLE dbo.MineGroup (
   x INT NOT NULL,

@@ -2,6 +2,7 @@
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Data.SqlClient;
 using System.Linq;
 using System.Web;
 
@@ -26,6 +27,15 @@ namespace SignalRTest.App_Code
         public static ActiveMQProducer getProducer()
         {
             return new ActiveMQProducer(connectionFactory, user, pass, dest);
+        }
+    }
+
+    public class MineGroup
+    {
+        public char[] getBin(int group_x, int group_y)
+        {
+            SqlConnection sqlConnection1 = new SqlConnection("Data Source=C-ASUS\\SQLEXPRESS;Initial Catalog=Mine;Integrated Security=True");
+            return null;
         }
     }
 
