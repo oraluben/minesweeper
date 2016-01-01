@@ -35,40 +35,84 @@ var MineGroup = Vue.extend({
         setTimeout(function () {
             self.init_canvas();
 
-            self.$parent.get_init_data(this.mineGroupX, this.mineGroupY);
+            self.$parent.get_init_data(self.mineGroupX, self.mineGroupY);
         });
     },
     events: {
         'init-callback': function (s_json) {
             if (this.ready) return;
 
+            var data = JSON.parse(s_json);
+            if (this.mineGroupX != data.group_x || this.mineGroupY != data.group_y) return; // not target
+
+            //console.log("mine group: " + data.group_x + ", " + data.group_y + " inited with data: " + data.data);
+
+            for (var i = 0; i < 400; i++) {
+                this.draw_mine(i % 20, Math.floor(i / 20), data.data[i]);
+            }
+
             this.ready = true;
 
             return;
         },
         'click-callback': function (s_json) {
-            if (!ready) return;
+            if (!this.ready) return;
 
-            // todo: update canvas
+            var self = this;
+
+            var data = JSON.parse(s_json);
+            if (data.mine_x - this.mineGroupX < 0 || data.mine_x - this.mineGroupX >= 20 ||
+                data.mine_y - this.mineGroupY < 0 || data.mine_y - this.mineGroupY >= 20) {
+                // out of range of this group
+                return;
+            }
+
+            JSON.parse(data.data).filter(function (v_each_mine, i) {
+                return v_each_mine.mine_x - this.mineGroupX >= 0 && v_each_mine.mine_x - this.mineGroupX < 20 &&
+                    v_each_mine.mine_y - this.mineGroupY >= 0 && v_each_mine.mine_y - this.mineGroupY < 20;
+            }).forEach(function (v_each_mine) {
+                console.log("draw " + v_each_mine.mine_x + ', ' + v_each_mine.mine_y + ': ' + v_each_mine.val);
+                self.draw_mine(v_each_mine.mine_x % 20, v_each_mine.mine_y % 20, v_each_mine.val);
+            });
 
             return;
         }
     },
     methods: {
-        draw_mine: function (mine_x, mine_y) {
+        draw_mine: function (mine_x, mine_y, action) {
             if (mine_x < 0 || mine_x > 19 || mine_y < 0 || mine_y > 19) return;
+            if (0 == action) return;
 
             var canvas = this.$el;
             var context = canvas.getContext("2d");
-
-            context.fillStyle = '#F0F0F0';
-            context.fillRect(mine_x * 32 + 1, mine_y * 32 + 1, 30, 30);
+            if (undefined === action || action < 0) {
+                // no action given or is mine
+                switch (action) {
+                    case -1:
+                        context.fillStyle = '#FFFFFF';  // flag
+                        break;
+                    case -2:
+                        context.fillStyle = '#000000';  // boom!
+                        break;
+                    default:
+                        context.fillStyle = '#E6E6E6';  // loading
+                        break;
+                }
+                context.fillRect(mine_x * 32 + 1, mine_y * 32 + 1, 30, 30);
+            } else if (action < 10) {
+                context.fillStyle = '#E6E6E6';  // loading
+                context.fillRect(mine_x * 32 + 1, mine_y * 32 + 1, 30, 30);
+                context.fillStyle = '#000000';  // number
+                context.font = "normal bold 20px consolas";
+                context.fillText(action, mine_x * 32 + 10, (mine_y + 1) * 32 - 8);
+            }
         },
         click: function (e, left_or_right) {
             var x = e.offsetX % 32, y = e.offsetY % 32;
             if (0 == x || 31 == x || 0 == y || 31 == y) {
                 return;  // click the border
             }
+
             x = Math.floor(e.offsetX / 32);
             y = Math.floor(e.offsetY / 32);
 
@@ -80,13 +124,13 @@ var MineGroup = Vue.extend({
             var data = JSON.stringify({
                 action: "click",
                 param: JSON.stringify({
-                    type: left_or_right,
+                    data: left_or_right, // "left" or "right"
                     mine_x: x,
                     mine_y: y,
                 }),
             });
 
-            this.$parent.send_to_server();
+            this.$parent.send_to_server(data);
         },
         init_canvas: function () {
             var canvas = this.$el;
@@ -211,17 +255,17 @@ Vue.component('mine', {
             console.warn('init send_to_server called');
         },
         receive_from_server: function (s_json) {
-            console.log(s_json);
-
             var d = JSON.parse(s_json);
 
-            switch (d.type) {
+            switch (d.action) {
                 case "init":
-                    console.log(s_json);
+                    this.callback_init_data(d.param);
                     break;
                 case "click":
+                    this.callback_click_result(d.param);
                     break;
                 default:
+                    console.log("recive unknown message:", s_json);
                     break;
             }
         },
@@ -235,16 +279,18 @@ Vue.component('mine', {
             };
         },
         callback_click_result: function (s_json) {
-            // left click & right click
-            // is mine or not
 
             this.$broadcast('click-callback', s_json);
 
             return;
         },
         callback_init_data: function (s_json) {
-            // just update data
-            // $watch will be fired in get_init_data
+            var data = JSON.parse(s_json);
+
+            this.data[data.group_x][data.group_y].data = data.data;
+            this.data[data.group_x][data.group_y].ready = true;
+
+            this.get_init_data(data.group_x, data.group_y); // recursion to send to mine groups
 
             return;
         },
@@ -257,7 +303,7 @@ Vue.component('mine', {
             if (undefined == self.data[group_x][group_y]) {
                 self.data[group_x][group_y] = {
                     ready: false,
-                    data: null,
+                    data: "",
                 };
             }
             if (self.data[group_x][group_y]['ready']) {
@@ -271,20 +317,11 @@ Vue.component('mine', {
 
             self.send_to_server(JSON.stringify({
                 action: "init",
-                param: "",
-            }));
-
-            self.data[group_x][group_y]['unwatch'] = this.$watch('data.' + group_x + '.' + group_y + '.data', function (val, oldV) {
-                self.data[group_x][group_y]['ready'] = true;
-
-                self.$broadcast('init-callback', JSON.stringify({
+                param: JSON.stringify({
                     group_x: group_x,
                     group_y: group_y,
-                    data: self.data[group_x][group_y]['data'],
-                }));
-
-                self.data[group_x][group_y]['unwatch']();
-            });
+                }),
+            }));
 
             return;
         },
