@@ -44,11 +44,12 @@ var MineGroup = Vue.extend({
 
             var data = JSON.parse(s_json);
             if (this.mineGroupX != data.group_x || this.mineGroupY != data.group_y) return; // not target
+            data = JSON.parse(data.data);
 
             //console.log("mine group: " + data.group_x + ", " + data.group_y + " inited with data: " + data.data);
 
             for (var i = 0; i < 400; i++) {
-                this.draw_mine(i % 20, Math.floor(i / 20), data.data[i]);
+                this.draw_mine(i % 20, Math.floor(i / 20), data[i]);
             }
 
             this.ready = true;
@@ -61,15 +62,10 @@ var MineGroup = Vue.extend({
             var self = this;
 
             var data = JSON.parse(s_json);
-            if (data.mine_x - this.mineGroupX < 0 || data.mine_x - this.mineGroupX >= 20 ||
-                data.mine_y - this.mineGroupY < 0 || data.mine_y - this.mineGroupY >= 20) {
-                // out of range of this group
-                return;
-            }
 
-            JSON.parse(data.data).filter(function (v_each_mine, i) {
-                return v_each_mine.mine_x - this.mineGroupX >= 0 && v_each_mine.mine_x - this.mineGroupX < 20 &&
-                    v_each_mine.mine_y - this.mineGroupY >= 0 && v_each_mine.mine_y - this.mineGroupY < 20;
+            data.filter(function (v_each_mine, i) {
+                return v_each_mine.mine_x - self.mineGroupX >= 0 && v_each_mine.mine_x - self.mineGroupX < 20 &&
+                    v_each_mine.mine_y - self.mineGroupY >= 0 && v_each_mine.mine_y - self.mineGroupY < 20;
             }).forEach(function (v_each_mine) {
                 console.log("draw " + v_each_mine.mine_x + ', ' + v_each_mine.mine_y + ': ' + v_each_mine.val);
                 self.draw_mine(v_each_mine.mine_x % 20, v_each_mine.mine_y % 20, v_each_mine.val);
@@ -85,11 +81,12 @@ var MineGroup = Vue.extend({
 
             var canvas = this.$el;
             var context = canvas.getContext("2d");
-            if (undefined === action || action < 0) {
+            //console.log(action);
+            if (action < 0 || undefined === action) {
                 // no action given or is mine
                 switch (action) {
                     case -1:
-                        context.fillStyle = '#FFFFFF';  // flag
+                        context.fillStyle = '#FF0000';  // flag
                         break;
                     case -2:
                         context.fillStyle = '#000000';  // boom!
@@ -99,12 +96,12 @@ var MineGroup = Vue.extend({
                         break;
                 }
                 context.fillRect(mine_x * 32 + 1, mine_y * 32 + 1, 30, 30);
-            } else if (action < 10) {
+            } else if (action < 10 && action >= 1) {
                 context.fillStyle = '#E6E6E6';  // loading
                 context.fillRect(mine_x * 32 + 1, mine_y * 32 + 1, 30, 30);
                 context.fillStyle = '#000000';  // number
                 context.font = "normal bold 20px consolas";
-                context.fillText(action, mine_x * 32 + 10, (mine_y + 1) * 32 - 8);
+                context.fillText(action - 1, mine_x * 32 + 10, (mine_y + 1) * 32 - 8);
             }
         },
         click: function (e, left_or_right) {
@@ -116,10 +113,14 @@ var MineGroup = Vue.extend({
             x = Math.floor(e.offsetX / 32);
             y = Math.floor(e.offsetY / 32);
 
-            this.draw_mine(x, y);
-
             x += this.mineGroupX;
             y += this.mineGroupY;
+
+            console.log(x, y);
+
+            if (this.$parent.get_mine(x, y) != 0) { return; }
+
+            this.draw_mine(x - this.mineGroupX, y - this.mineGroupY);
 
             var data = JSON.stringify({
                 action: "click",
@@ -278,14 +279,41 @@ Vue.component('mine', {
                 hub.server.sendToServer(s_json);
             };
         },
-        callback_click_result: function (s_json) {
+        get_mine: function (mine_x, mine_y) {
+            var offset_x = mine_x % 20, offset_y = mine_y % 20;
+            var group_x = mine_x - offset_x, group_y = mine_y - offset_y;
 
-            this.$broadcast('click-callback', s_json);
+            if (!this.data[group_x][group_y].ready) {
+                return -9;
+            }
+            var data = JSON.parse(this.data[group_x][group_y].data);
+            return data[offset_x + offset_y * 20];
+        },
+        update_mine: function (mine) {
+            var offset_x = mine.mine_x % 20, offset_y = mine.mine_y % 20;
+            var group_x = mine.mine_x - offset_x, group_y = mine.mine_y - offset_y;
+
+            if (!this.data[group_x][group_y].ready) { return; }
+            var data = JSON.parse(this.data[group_x][group_y].data);
+            data[offset_x + offset_y * 20] = mine.val;
+            this.data[group_x][group_y].data = JSON.stringify(data);
+        },
+        callback_click_result: function (s_json) {
+            var self = this;
+            var data = JSON.parse(s_json);
+
+            this.$broadcast('click-callback', JSON.stringify(JSON.parse(data.data).filter(function (each_mine_v) {
+                if (self.get_mine(each_mine_v.mine_x, each_mine_v.mine_y) != 0) { return false; }
+                self.update_mine(each_mine_v);
+                return true;
+            })));
 
             return;
         },
         callback_init_data: function (s_json) {
             var data = JSON.parse(s_json);
+
+            //console.log(data);
 
             this.data[data.group_x][data.group_y].data = data.data;
             this.data[data.group_x][data.group_y].ready = true;
@@ -306,11 +334,11 @@ Vue.component('mine', {
                     data: "",
                 };
             }
-            if (self.data[group_x][group_y]['ready']) {
+            if (self.data[group_x][group_y].ready) {
                 self.$broadcast('init-callback', JSON.stringify({
                     group_x: group_x,
                     group_y: group_y,
-                    data: self.data[group_x][group_y]['data'],
+                    data: self.data[group_x][group_y].data,
                 }));
                 return;
             }

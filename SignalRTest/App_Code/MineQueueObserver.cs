@@ -34,7 +34,7 @@ namespace SignalRTest.App_Code
                     string ConnectionID = m.Properties["ConnectionID"].ToString();
 
                     ITextMessage textM = m as ITextMessage;
-                    // Debug.WriteLine("MineQueueObserver get a message, body: {0}", (object)textM.Text);
+                    //Debug.WriteLine("MineQueueObserver get a message, body: {0}", (object)textM.Text);
                     HandleOne(textM);
                 }
                 catch (NMSException) { c = Utils.getConsumer(); }
@@ -74,15 +74,23 @@ namespace SignalRTest.App_Code
                     {
                         ClickParamMessage d = JsonConvert.DeserializeObject<ClickParamMessage>(body_o.param);
 
-                        // todo: handle db change
-                        string type = d.data; // "left" or "right"
-                        switch (type)
+                        using (MineGroupUtils context = new MineGroupUtils())
                         {
-                            case "left": { break; }
-                            case "right": { break; }
-                            default: break;
+                            switch (d.data)  // "left" or "right"
+                            {
+                                case "left":
+                                    {
+                                        d.data = context.clickLeft(d.mine_x, d.mine_y);
+                                        break;
+                                    }
+                                case "right":
+                                    {
+                                        d.data = context.clickRight(d.mine_x, d.mine_y);
+                                        break;
+                                    }
+                                default: break;
+                            }
                         }
-                        d.data = JsonConvert.SerializeObject(ArrayList.Repeat(0, 0));
 
                         res = JsonConvert.SerializeObject(new CallBackMessage("click", JsonConvert.SerializeObject(d)));
 

@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SignalRTest", "SignalRTest\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MineGroup", "MineGroup\MineGroup.csproj", "{66FB207B-A4AE-46AD-9FF1-B53892178591}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EFTest", "EFTest\EFTest.csproj", "{33D0FA97-AD5D-47DA-A9D4-F4FDAAC2873C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{66FB207B-A4AE-46AD-9FF1-B53892178591}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{66FB207B-A4AE-46AD-9FF1-B53892178591}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{66FB207B-A4AE-46AD-9FF1-B53892178591}.Release|Any CPU.Build.0 = Release|Any CPU
+		{33D0FA97-AD5D-47DA-A9D4-F4FDAAC2873C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{33D0FA97-AD5D-47DA-A9D4-F4FDAAC2873C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{33D0FA97-AD5D-47DA-A9D4-F4FDAAC2873C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{33D0FA97-AD5D-47DA-A9D4-F4FDAAC2873C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

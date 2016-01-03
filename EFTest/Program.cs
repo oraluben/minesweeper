@@ -14,9 +14,9 @@ namespace EFTest
         {
             using (MineGroupUtils context = new MineGroupUtils())
             {
-                byte[] bs = { 0, 1, 1, 1, 0 };
+                byte[] bs = { 0, 1, 0, 1, 1 };
                 int res = 0;
-                for (int i = 0; i < bs.Count(); i++)
+                for (int i = 1; i < 5; i++)
                 {
                     res <<= 1;
                     res += bs[i];
